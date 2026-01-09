@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="A powerful web app for editing, merging, and cleaning VCF contact files at scale.">
+    <meta name="theme-color" content="#6366f1">
+
+    <title>VCF Contact Manager - Edit, Merge & Clean Contacts</title>
+
+    <!-- Preconnect for fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Main stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- App Container -->
+    <div class="app-container" id="app">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar" aria-label="File management">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    <h1 class="logo-text">VCF Manager</h1>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12" />
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Import Section -->
+            <div class="sidebar-section">
+                <h2 class="section-title">Import Contacts</h2>
+                <div class="import-zone" id="dropZone" role="button" tabindex="0"
+                    aria-label="Drop files here or click to upload">
+                    <svg class="import-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <span class="import-text">Drop VCF files here</span>
+                    <span class="import-subtext">or click to browse</span>
+                    <input type="file" id="fileInput" class="file-input" accept=".vcf" multiple aria-hidden="true">
+                </div>
+                <button class="btn btn-secondary btn-full" id="pasteBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Paste VCF Text
+                </button>
+            </div>
+
+            <!-- Files List -->
+            <div class="sidebar-section files-section">
+                <h2 class="section-title">
+                    Source Files
+                    <span class="badge" id="fileCount">0</span>
+                </h2>
+                <ul class="files-list" id="filesList" role="listbox" aria-label="Imported VCF files">
+                    <li class="file-item file-item--all active" data-file-id="all" role="option" aria-selected="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                        </svg>
+                        <span class="file-name">All Contacts</span>
+                        <span class="file-count" id="totalContactCount">0</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Actions -->
+            <div class="sidebar-section sidebar-actions">
+                <button class="btn btn-primary btn-full" id="analyzeBtn" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="M21 21l-4.35-4.35" />
+                    </svg>
+                    Find Duplicates
+                </button>
+                <button class="btn btn-success btn-full" id="exportBtn" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Export VCF
+                </button>
+                <button class="btn btn-danger btn-full" id="clearAllBtn" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                    Clear All Sources
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="main-content">
+            <!-- Header -->
+            <header class="content-header">
+                <div class="header-left">
+                    <button class="btn btn-icon mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12" />
+                            <line x1="3" y1="6" x2="21" y2="6" />
+                            <line x1="3" y1="18" x2="21" y2="18" />
+                        </svg>
+                    </button>
+                    <h2 class="page-title" id="pageTitle">All Contacts</h2>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="M21 21l-4.35-4.35" />
+                        </svg>
+                        <input type="search" class="search-input" id="searchInput" placeholder="Search contacts..."
+                            aria-label="Search contacts">
+                    </div>
+                </div>
+            </header>
+
+            <!-- Toolbar -->
+            <div class="toolbar" id="toolbar">
+                <div class="toolbar-left">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" id="selectAll" aria-label="Select all contacts">
+                        <span class="checkmark"></span>
+                    </label>
+                    <span class="selected-count" id="selectedCount">0 selected</span>
+                    <button class="btn btn-sm btn-primary" id="addContactBtn" style="margin-left: 12px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="8.5" cy="7" r="4" />
+                            <line x1="20" y1="8" x2="20" y2="14" />
+                            <line x1="23" y1="11" x2="17" y2="11" />
+                        </svg>
+                        Add Contact
+                    </button>
+                </div>
+                <div class="toolbar-right" id="bulkActions" style="display: none;">
+                    <button class="btn btn-sm btn-danger" id="bulkDeleteBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        Delete
+                    </button>
+                    <button class="btn btn-sm btn-secondary" id="bulkMoveBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                        </svg>
+                        Move
+                    </button>
+                    <button class="btn btn-sm btn-secondary" id="bulkExportBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Export
+                    </button>
+                </div>
+            </div>
+
+            <!-- Contact Table -->
+            <div class="table-container" id="tableContainer">
+                <table class="contact-table" id="contactTable" role="grid">
+                    <thead>
+                        <tr>
+                            <th class="col-select" scope="col">
+                                <span class="sr-only">Select</span>
+                            </th>
+                            <th class="col-name" scope="col">Name</th>
+                            <th class="col-phone" scope="col">Phone</th>
+                            <th class="col-email" scope="col">Email</th>
+                            <th class="col-org" scope="col">Organization</th>
+                            <th class="col-source" scope="col">Source</th>
+                            <th class="col-actions" scope="col">
+                                <span class="sr-only">Actions</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="contactsBody">
+                        <!-- Contacts will be rendered here -->
+                    </tbody>
+                </table>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState">
+                    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <line x1="23" y1="11" x2="17" y2="11" />
+                    </svg>
+                    <h3 class="empty-title">No Contacts Yet</h3>
+                    <p class="empty-text">Import your VCF files to get started. Drag and drop files into the sidebar or
+                        click to upload.</p>
+                </div>
+
+                <!-- Loading State -->
+                <div class="loading-state" id="loadingState" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Loading contacts...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Paste VCF Modal -->
+    <div class="modal" id="pasteModal" role="dialog" aria-modal="true" aria-labelledby="pasteModalTitle">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="pasteModalTitle">Paste VCF Content</h3>
+                <button class="modal-close" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <textarea id="vcfTextarea" class="vcf-textarea"
+                    placeholder="Paste your VCF content here...&#10;&#10;BEGIN:VCARD&#10;VERSION:3.0&#10;FN:John Doe&#10;TEL:+1234567890&#10;END:VCARD"
+                    rows="10"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close-modal>Cancel</button>
+                <button class="btn btn-primary" id="importPastedBtn">Import Contacts</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Merge Modal -->
+    <div class="modal" id="mergeModal" role="dialog" aria-modal="true" aria-labelledby="mergeModalTitle">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 id="mergeModalTitle">Duplicate Contacts Found</h3>
+                <button class="modal-close" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="merge-summary" id="mergeSummary"></div>
+                <div class="merge-groups" id="mergeGroups"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close-modal>Cancel</button>
+                <div class="auto-merge-wrapper" style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn btn-primary" id="previewMergeBtn">Preview</button>
+                    <button class="btn btn-success" id="autoMergeBtn"
+                        title="Only merges contacts with EXACT same name AND phone number.">
+                        Auto-Merge Safe
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Contact Modal -->
+    <div class="modal" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="editModalTitle">Edit Contact</h3>
+                <button class="modal-close" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm" class="edit-form">
+                    <input type="hidden" id="editContactId">
+                    <input type="hidden" id="editSourceFile">
+                    <div class="form-group" id="sourceFileGroup" style="display: none;">
+                        <label for="editSourceFileSelect">Save to Source File</label>
+                        <select id="editSourceFileSelect" class="form-control">
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editName">Name</label>
+                        <input type="text" id="editName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPhones">Phone Numbers</label>
+                        <div id="editPhonesContainer" class="multi-input-container"></div>
+                        <button type="button" class="btn btn-sm btn-link" id="addPhoneBtn">+ Add Phone</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="editEmails">Email Addresses</label>
+                        <div id="editEmailsContainer" class="multi-input-container"></div>
+                        <button type="button" class="btn btn-sm btn-link" id="addEmailBtn">+ Add Email</button>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editOrg">Organization</label>
+                            <input type="text" id="editOrg" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="editTitle">Title</label>
+                            <input type="text" id="editTitle" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editNotes">Notes</label>
+                        <textarea id="editNotes" class="form-control" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close-modal>Cancel</button>
+                <button class="btn btn-primary" id="saveContactBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conflict Resolution Modal -->
+    <div class="modal" id="conflictModal" role="dialog" aria-modal="true" aria-labelledby="conflictModalTitle">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 id="conflictModalTitle">Resolve Conflict</h3>
+                <button class="modal-close" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="conflict-desc">These contacts have conflicting information. Choose which values to keep:</p>
+                <div class="conflict-container" id="conflictContainer"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close-modal>Skip</button>
+                <button class="btn btn-primary" id="resolveConflictBtn">Merge Selected</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="confirmModalTitle">Confirm Action</h3>
+                <button class="modal-close" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">Are you sure you want to proceed?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close-modal>Cancel</button>
+                <button class="btn btn-danger" id="confirmActionBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Merge Modal -->
+    <div class="modal" id="previewMergeModal" role="dialog" aria-modal="true" aria-labelledby="previewMergeModalTitle">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 id="previewMergeModalTitle">Auto-Merge Preview</h3>
+                <button class="modal-close" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="auto-merge-info"
+                    style="background: var(--color-primary-subtle); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                    <p style="margin: 0; font-size: 14px;">
+                        <strong>ℹ️ What Auto-Merge does:</strong><br>
+                        Only merges contacts with <strong>exact same name AND phone number</strong>.
+                        All other details will be combined.
+                    </p>
+                </div>
+                <div id="previewMergeContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close-modal>Cancel</button>
+                <button class="btn btn-success" id="confirmAutoMergeBtn">Proceed with Merge</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer" role="status" aria-live="polite"></div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+</body>
+
+</html>
