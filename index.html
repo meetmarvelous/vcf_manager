@@ -15,6 +15,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.0/css/dataTables.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.min.css">
+
     <!-- Main stylesheet -->
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -284,18 +288,21 @@
                 <form id="editForm" class="edit-form">
                     <input type="hidden" id="editContactId">
                     <input type="hidden" id="editSourceFile">
+                    <p class="form-required-note"><span class="required-asterisk">*</span> Required field (Name or Phone
+                        Number)</p>
                     <div class="form-group" id="sourceFileGroup" style="display: none;">
-                        <label for="editSourceFileSelect">Save to Source File</label>
+                        <label for="editSourceFileSelect">Save to Source File <span
+                                class="required-asterisk">*</span></label>
                         <select id="editSourceFileSelect" class="form-control">
                             <!-- Will be populated dynamically -->
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="editName">Name</label>
-                        <input type="text" id="editName" class="form-control" required>
+                        <label for="editName">Name <span class="required-asterisk">*</span></label>
+                        <input type="text" id="editName" class="form-control" placeholder="Enter contact name">
                     </div>
                     <div class="form-group">
-                        <label for="editPhones">Phone Numbers</label>
+                        <label for="editPhones">Phone Numbers <span class="required-asterisk">*</span></label>
                         <div id="editPhonesContainer" class="multi-input-container"></div>
                         <button type="button" class="btn btn-sm btn-link" id="addPhoneBtn">+ Add Phone</button>
                     </div>
@@ -307,16 +314,17 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="editOrg">Organization</label>
-                            <input type="text" id="editOrg" class="form-control">
+                            <input type="text" id="editOrg" class="form-control" placeholder="Company name">
                         </div>
                         <div class="form-group">
                             <label for="editTitle">Title</label>
-                            <input type="text" id="editTitle" class="form-control">
+                            <input type="text" id="editTitle" class="form-control" placeholder="Job title">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="editNotes">Notes</label>
-                        <textarea id="editNotes" class="form-control" rows="3"></textarea>
+                        <textarea id="editNotes" class="form-control" rows="3"
+                            placeholder="Additional notes..."></textarea>
                     </div>
                 </form>
             </div>
@@ -394,6 +402,9 @@
     <div class="toast-container" id="toastContainer" role="status" aria-live="polite"></div>
 
     <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.0.0/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.min.js"></script>
     <script src="js/app.js"></script>
 </body>
 

@@ -19,7 +19,8 @@
         duplicateGroups: [],
         skippedGroups: new Set(),
         currentConflict: null,
-        isLoading: false
+        isLoading: false,
+        dataTable: null  // DataTables instance reference
     };
 
     // =============================================
@@ -290,7 +291,19 @@
         allFilesItem.setAttribute('aria-selected', state.selectedFile === 'all');
     }
 
+
     function renderContacts() {
+        // Properly destroy existing DataTable if it exists
+        if (state.dataTable) {
+            state.dataTable.destroy();
+            state.dataTable = null;
+        }
+
+        // Also check using DataTables API in case state wasn't synced
+        if (typeof $ !== 'undefined' && $.fn.DataTable && $.fn.DataTable.isDataTable('#contactTable')) {
+            $('#contactTable').DataTable().destroy();
+        }
+
         if (state.contacts.length === 0) {
             elements.contactTable.style.display = 'none';
             elements.emptyState.style.display = 'flex';
@@ -300,6 +313,7 @@
         elements.contactTable.style.display = 'table';
         elements.emptyState.style.display = 'none';
 
+        // Build table body HTML
         elements.contactsBody.innerHTML = state.contacts.map(contact => `
             <tr data-contact-id="${contact.id}" class="${state.selectedContacts.has(contact.id) ? 'selected' : ''}">
                 <td class="col-select">
@@ -345,7 +359,146 @@
             </tr>
         `).join('');
 
+        // Initialize DataTables with our custom configuration
+        initDataTable();
+
         updateSelectionUI();
+    }
+
+    /**
+     * Initialize DataTables on the contact table
+     * This handles pagination, sorting, and responsive layout
+     */
+    function initDataTable() {
+        // Only initialize if jQuery and DataTables are loaded
+        if (typeof $ === 'undefined' || typeof $.fn.DataTable === 'undefined') {
+            console.warn('DataTables or jQuery not loaded, skipping initialization');
+            return;
+        }
+
+        // Check if DataTable is already initialized on this table and destroy it
+        if ($.fn.DataTable.isDataTable('#contactTable')) {
+            $('#contactTable').DataTable().destroy();
+        }
+
+        // Initialize DataTable with immediate display
+        state.dataTable = $('#contactTable').DataTable({
+            // Pagination settings - show 25 entries immediately
+            paging: true,
+            pageLength: 25,
+            displayStart: 0,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+
+            // Don't defer rendering - draw immediately
+            deferRender: false,
+
+            // Disable initial sorting (we handle contact order from API)
+            order: [],
+
+            // Column definitions
+            columnDefs: [
+                { orderable: false, targets: [0, 6] }, // Disable sort on checkbox and actions columns
+                { searchable: false, targets: [0, 6] }, // Don't search checkbox/actions
+                { responsivePriority: 1, targets: 1 }, // Name highest priority
+                { responsivePriority: 2, targets: 2 }, // Phone second priority
+                { responsivePriority: 3, targets: 3 }, // Email third priority
+                { responsivePriority: 10001, targets: [4, 5] } // Org and Source hidden first
+            ],
+
+            // Responsive extension
+            responsive: true,
+
+            // Interface language
+            language: {
+                search: "",
+                searchPlaceholder: "Filter within results...",
+                lengthMenu: "Show _MENU_ contacts",
+                info: "Showing _START_ to _END_ of _TOTAL_ contacts",
+                infoEmpty: "No contacts",
+                infoFiltered: "(filtered from _MAX_)",
+                paginate: {
+                    first: "«",
+                    last: "»",
+                    next: "›",
+                    previous: "‹"
+                },
+                emptyTable: "No contacts found"
+            },
+
+            // Customize DOM structure for better styling
+            dom: '<"datatable-header"lf>rt<"datatable-footer"ip>',
+
+            // Disable state saving (we manage state via our app)
+            stateSave: false,
+
+            // Initialize callback - force redraw after init
+            initComplete: function () {
+                // Force a draw to ensure pagination is applied
+                this.api().draw();
+            },
+
+            // Handle responsive events
+            drawCallback: function () {
+                // Ensure row actions are still visible after redraw
+                updateRowActionsVisibility();
+            }
+        });
+
+        // Handle DataTables search to sync with our search input
+        state.dataTable.on('search.dt', function () {
+            updateSelectionUIForCurrentPage();
+        });
+
+        // Preserve selection across pagination
+        state.dataTable.on('draw.dt', function () {
+            updateSelectionUIForCurrentPage();
+        });
+    }
+
+    /**
+     * Update selection UI considering DataTables pagination
+     */
+    function updateSelectionUIForCurrentPage() {
+        // Re-apply selection states after DataTable redraw
+        if (!state.dataTable) return;
+
+        elements.contactsBody.querySelectorAll('tr[data-contact-id]').forEach(row => {
+            const contactId = row.dataset.contactId;
+            const checkbox = row.querySelector('.contact-checkbox');
+            if (checkbox) {
+                checkbox.checked = state.selectedContacts.has(contactId);
+                row.classList.toggle('selected', state.selectedContacts.has(contactId));
+            }
+        });
+
+        updateSelectionUI();
+    }
+
+    /**
+     * Ensure row actions are properly visible after DataTables operations
+     */
+    function updateRowActionsVisibility() {
+        // On mobile, make sure actions are always somewhat visible
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.row-actions').forEach(actions => {
+                actions.style.opacity = '1';
+            });
+        }
+    }
+
+    /**
+     * Get all contact IDs from all pages (not just current page)
+     * This is essential for batch operations to work correctly with DataTables
+     */
+    function getAllContactIds() {
+        return state.contacts.map(c => c.id);
+    }
+
+    /**
+     * Get selected contact IDs - this works across all pages
+     */
+    function getSelectedContactIds() {
+        return Array.from(state.selectedContacts);
     }
 
     function renderMultiValue(items, valueKey, typeKey) {
@@ -586,29 +739,33 @@
             elements.editModalTitle.textContent = 'Edit Contact';
         }
 
-        // Render phones
+        // Render phones - use 'mobile' as default type if not specified
         elements.editPhonesContainer.innerHTML = '';
         const phones = contact.phones.length > 0 ? contact.phones : [{ value: '', type: 'mobile' }];
-        phones.forEach((phone, i) => addPhoneInput(phone.value, phone.type));
+        phones.forEach((phone, i) => addPhoneInput(phone.value, phone.type || 'mobile'));
 
-        // Render emails
+        // Render emails - use 'home' as default type if not specified
         elements.editEmailsContainer.innerHTML = '';
         const emails = contact.emails.length > 0 ? contact.emails : [{ value: '', type: 'home' }];
-        emails.forEach((email, i) => addEmailInput(email.value, email.type));
+        emails.forEach((email, i) => addEmailInput(email.value, email.type || 'home'));
 
         openModal(elements.editModal);
     }
 
     function addPhoneInput(value = '', type = 'mobile') {
+        // Normalize type - default to 'mobile' if not recognized
+        const validTypes = ['mobile', 'home', 'work', 'other'];
+        const normalizedType = validTypes.includes(type?.toLowerCase()) ? type.toLowerCase() : 'mobile';
+
         const row = document.createElement('div');
         row.className = 'multi-input-row';
         row.innerHTML = `
             <input type="tel" class="form-control phone-value" value="${escapeHtml(value)}" placeholder="Phone number">
             <select class="phone-type">
-                <option value="mobile" ${type === 'mobile' ? 'selected' : ''}>Mobile</option>
-                <option value="home" ${type === 'home' ? 'selected' : ''}>Home</option>
-                <option value="work" ${type === 'work' ? 'selected' : ''}>Work</option>
-                <option value="other" ${type === 'other' ? 'selected' : ''}>Other</option>
+                <option value="mobile" ${normalizedType === 'mobile' ? 'selected' : ''}>Mobile</option>
+                <option value="home" ${normalizedType === 'home' ? 'selected' : ''}>Home</option>
+                <option value="work" ${normalizedType === 'work' ? 'selected' : ''}>Work</option>
+                <option value="other" ${normalizedType === 'other' ? 'selected' : ''}>Other</option>
             </select>
             <button type="button" class="remove-input-btn" aria-label="Remove phone">×</button>
         `;
@@ -616,14 +773,18 @@
     }
 
     function addEmailInput(value = '', type = 'home') {
+        // Normalize type - default to 'home' if not recognized
+        const validTypes = ['home', 'work', 'other'];
+        const normalizedType = validTypes.includes(type?.toLowerCase()) ? type.toLowerCase() : 'home';
+
         const row = document.createElement('div');
         row.className = 'multi-input-row';
         row.innerHTML = `
             <input type="email" class="form-control email-value" value="${escapeHtml(value)}" placeholder="Email address">
             <select class="email-type">
-                <option value="home" ${type === 'home' ? 'selected' : ''}>Home</option>
-                <option value="work" ${type === 'work' ? 'selected' : ''}>Work</option>
-                <option value="other" ${type === 'other' ? 'selected' : ''}>Other</option>
+                <option value="home" ${normalizedType === 'home' ? 'selected' : ''}>Home</option>
+                <option value="work" ${normalizedType === 'work' ? 'selected' : ''}>Work</option>
+                <option value="other" ${normalizedType === 'other' ? 'selected' : ''}>Other</option>
             </select>
             <button type="button" class="remove-input-btn" aria-label="Remove email">×</button>
         `;
@@ -769,6 +930,75 @@
         } finally {
             setLoading(false);
         }
+    }
+
+    /**
+     * Load contacts silently without showing loading indicator
+     * Used when refreshing data in the background while modal is open
+     */
+    async function loadContactsSilently() {
+        try {
+            const fileId = state.selectedFile === 'all' ? null : state.selectedFile;
+            const search = elements.searchInput.value.trim() || null;
+
+            const data = await api.getContacts(fileId, search);
+            state.contacts = data.contacts || [];
+            state.files = data.files || state.files;
+
+            // Update file counts in sidebar
+            renderFiles();
+            // Note: We don't re-render contacts table to avoid disrupting the merge modal
+        } catch (error) {
+            console.error('Silent load contacts error:', error);
+        }
+    }
+
+    /**
+     * Update the merge summary counts after a group has been processed
+     */
+    function updateMergeSummary() {
+        const categories = state.duplicateGroups.categories;
+        if (!categories) return;
+
+        const exactMatch = categories.exactMatch?.length || 0;
+        const sameNumber = categories.sameNumber?.length || 0;
+        const sameName = categories.sameName?.length || 0;
+        const similarPhone = categories.similarPhone?.length || 0;
+        const sameEmail = categories.sameEmail?.length || 0;
+
+        const totalGroups = exactMatch + sameNumber + sameName + similarPhone + sameEmail;
+
+        // Update the summary text
+        if (elements.mergeSummary) {
+            elements.mergeSummary.innerHTML = `
+                <h4>${totalGroups} Duplicate Groups Remaining</h4>
+                <div class="merge-stats" style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; font-size: 13px;">
+                    ${exactMatch > 0 ? `<span style="color: var(--color-success);">✅ ${exactMatch} Safe to Auto-Merge</span>` : ''}
+                    ${sameNumber > 0 ? `<span style="color: var(--color-warning);">📱 ${sameNumber} Same Number</span>` : ''}
+                    ${sameName > 0 ? `<span style="color: var(--color-warning);">👤 ${sameName} Same Name</span>` : ''}
+                    ${similarPhone > 0 ? `<span style="color: var(--color-info);">🔗 ${similarPhone} Similar Phone</span>` : ''}
+                    ${sameEmail > 0 ? `<span style="color: var(--color-text-muted);">📧 ${sameEmail} Same Email</span>` : ''}
+                </div>
+            `;
+        }
+
+        // Update auto-merge button state
+        if (elements.autoMergeBtn) {
+            elements.autoMergeBtn.disabled = exactMatch === 0;
+        }
+        if (elements.previewMergeBtn) {
+            elements.previewMergeBtn.disabled = exactMatch === 0;
+        }
+
+        // Check if specific category sections are now empty and remove their headers
+        ['exactMatch', 'sameNumber', 'sameName', 'similarPhone', 'sameEmail'].forEach(category => {
+            if ((categories[category]?.length || 0) === 0) {
+                const categoryEl = document.querySelector(`.merge-category[data-category="${category}"]`);
+                if (categoryEl) {
+                    categoryEl.remove();
+                }
+            }
+        });
     }
 
     async function handleFileUpload(files) {
@@ -1135,13 +1365,49 @@
         });
 
         const ids = state.currentConflict.contacts.map(c => c.id);
+        const conflictType = state.currentConflict.matchType;
+        const conflictIndex = state.currentConflict._resolveIndex;
 
         try {
             await api.merge(ids, preferredValues);
             showToast('Contacts merged successfully', 'success');
             closeModal(elements.conflictModal);
+
+            // Remove the resolved group from state
+            if (conflictType === 'samePhone' && state.duplicateGroups.categories?.sameNumber) {
+                const idx = state.duplicateGroups.categories.sameNumber.findIndex(
+                    g => g.contacts.some(c => ids.includes(c.id))
+                );
+                if (idx !== -1) {
+                    state.duplicateGroups.categories.sameNumber.splice(idx, 1);
+                }
+            }
+
             state.currentConflict = null;
-            await loadContacts();
+
+            // Refresh contacts silently
+            await loadContactsSilently();
+
+            // Check if there are remaining duplicate groups
+            const categories = state.duplicateGroups.categories;
+            const totalRemaining = (categories?.exactMatch?.length || 0) +
+                (categories?.sameNumber?.length || 0) +
+                (categories?.sameName?.length || 0) +
+                (categories?.similarPhone?.length || 0) +
+                (categories?.sameEmail?.length || 0);
+
+            if (totalRemaining > 0) {
+                // Reopen the merge modal with updated data
+                showToast('Returning to duplicates panel...', 'success');
+                setTimeout(() => {
+                    // Rebuild merge modal with remaining groups
+                    renderMergeModal({ categories: state.duplicateGroups.categories });
+                }, 300);
+            } else {
+                // All done!
+                showToast('All duplicates have been resolved!', 'success');
+                await loadContacts();
+            }
         } catch (error) {
             showToast(error.message, 'error');
         }
@@ -1257,14 +1523,24 @@
             loadContacts();
         }, 300));
 
-        // Select all
+        // Select all - works across ALL pages, not just current page
         elements.selectAll.addEventListener('change', (e) => {
             if (e.target.checked) {
+                // Select all contacts from state (includes all pages)
                 state.contacts.forEach(c => state.selectedContacts.add(c.id));
             } else {
                 state.selectedContacts.clear();
             }
-            renderContacts();
+            // Update checkbox states on visible rows
+            elements.contactsBody.querySelectorAll('tr[data-contact-id]').forEach(row => {
+                const contactId = row.dataset.contactId;
+                const checkbox = row.querySelector('.contact-checkbox');
+                if (checkbox) {
+                    checkbox.checked = state.selectedContacts.has(contactId);
+                    row.classList.toggle('selected', state.selectedContacts.has(contactId));
+                }
+            });
+            updateSelectionUI();
         });
 
         // Individual contact selection and actions
@@ -1354,10 +1630,13 @@
             // Handle merge button (same name or similar phone)
             if (e.target.classList.contains('merge-group-btn')) {
                 let group;
+                let categoryType;
                 if (type === 'sameName') {
                     group = state.duplicateGroups.categories?.sameName[index];
+                    categoryType = 'sameName';
                 } else if (type === 'similarPhone') {
                     group = state.duplicateGroups.categories?.similarPhone[index];
+                    categoryType = 'similarPhone';
                 }
                 if (group) {
                     const ids = group.contacts.map(c => c.id);
@@ -1369,12 +1648,43 @@
                     }
 
                     try {
+                        // Show merging indicator on the button
+                        e.target.textContent = 'Merging...';
+                        e.target.disabled = true;
+
                         await api.merge(ids, preferredValues);
                         showToast('Contacts merged successfully', 'success');
-                        closeModal(elements.mergeModal);
-                        await loadContacts();
+
+                        // Remove the merged group from state
+                        if (categoryType && state.duplicateGroups.categories?.[categoryType]) {
+                            state.duplicateGroups.categories[categoryType].splice(index, 1);
+                        }
+
+                        // Remove the group element from DOM with animation
+                        groupEl.style.transition = 'all 0.3s ease';
+                        groupEl.style.opacity = '0';
+                        groupEl.style.transform = 'translateX(20px)';
+
+                        setTimeout(() => {
+                            groupEl.remove();
+                            // Check if there are any remaining groups
+                            const remainingGroups = document.querySelectorAll('.merge-group');
+                            if (remainingGroups.length === 0) {
+                                // All groups are merged, close the modal
+                                closeModal(elements.mergeModal);
+                                showToast('All duplicates have been resolved!', 'success');
+                            } else {
+                                // Update the summary counts
+                                updateMergeSummary();
+                            }
+                        }, 300);
+
+                        // Refresh contacts in background (without closing modal)
+                        loadContactsSilently();
                     } catch (error) {
                         showToast(error.message, 'error');
+                        e.target.textContent = 'Merge';
+                        e.target.disabled = false;
                     }
                 }
                 return;
