@@ -75,6 +75,31 @@
         addPhoneBtn: document.getElementById('addPhoneBtn'),
         addEmailBtn: document.getElementById('addEmailBtn'),
         saveContactBtn: document.getElementById('saveContactBtn'),
+
+        // Additional fields elements
+        toggleAdditionalFields: document.getElementById('toggleAdditionalFields'),
+        additionalFieldsSection: document.getElementById('additionalFieldsSection'),
+        editPrefix: document.getElementById('editPrefix'),
+        editMiddleName: document.getElementById('editMiddleName'),
+        editSuffix: document.getElementById('editSuffix'),
+        editNickname: document.getElementById('editNickname'),
+        editDepartment: document.getElementById('editDepartment'),
+        editBirthday: document.getElementById('editBirthday'),
+        editAnniversary: document.getElementById('editAnniversary'),
+        editGender: document.getElementById('editGender'),
+        editTimezone: document.getElementById('editTimezone'),
+        editGeo: document.getElementById('editGeo'),
+        editUrlsContainer: document.getElementById('editUrlsContainer'),
+        editAddressesContainer: document.getElementById('editAddressesContainer'),
+        editSocialProfilesContainer: document.getElementById('editSocialProfilesContainer'),
+        editImHandlesContainer: document.getElementById('editImHandlesContainer'),
+        editRelatedContainer: document.getElementById('editRelatedContainer'),
+        addUrlBtn: document.getElementById('addUrlBtn'),
+        addAddressBtn: document.getElementById('addAddressBtn'),
+        addSocialProfileBtn: document.getElementById('addSocialProfileBtn'),
+        addImHandleBtn: document.getElementById('addImHandleBtn'),
+        addRelatedBtn: document.getElementById('addRelatedBtn'),
+
         conflictModal: document.getElementById('conflictModal'),
         conflictContainer: document.getElementById('conflictContainer'),
         resolveConflictBtn: document.getElementById('resolveConflictBtn'),
@@ -749,6 +774,85 @@
         const emails = contact.emails.length > 0 ? contact.emails : [{ value: '', type: 'home' }];
         emails.forEach((email, i) => addEmailInput(email.value, email.type || 'home'));
 
+        // Populate additional fields
+        if (elements.editPrefix) elements.editPrefix.value = contact.prefix || '';
+        if (elements.editMiddleName) elements.editMiddleName.value = contact.middleName || '';
+        if (elements.editSuffix) elements.editSuffix.value = contact.suffix || '';
+        if (elements.editNickname) elements.editNickname.value = contact.nickname || '';
+        if (elements.editDepartment) elements.editDepartment.value = contact.department || '';
+        if (elements.editBirthday) elements.editBirthday.value = contact.birthday || '';
+        if (elements.editAnniversary) elements.editAnniversary.value = contact.anniversary || '';
+        if (elements.editGender) elements.editGender.value = contact.gender || '';
+        if (elements.editTimezone) elements.editTimezone.value = contact.timezone || '';
+        if (elements.editGeo) elements.editGeo.value = contact.geo || '';
+
+        // Render URLs
+        if (elements.editUrlsContainer) {
+            elements.editUrlsContainer.innerHTML = '';
+            const urls = contact.urls || [];
+            urls.forEach(url => addUrlInput(url.value, url.type));
+        }
+
+        // Render Addresses
+        if (elements.editAddressesContainer) {
+            elements.editAddressesContainer.innerHTML = '';
+            const addresses = contact.addresses || [];
+            addresses.forEach(addr => addAddressInput(addr));
+        }
+
+        // Render Social Profiles
+        if (elements.editSocialProfilesContainer) {
+            elements.editSocialProfilesContainer.innerHTML = '';
+            const socialProfiles = contact.socialProfiles || [];
+            socialProfiles.forEach(sp => addSocialProfileInput(sp.value, sp.type));
+        }
+
+        // Render IM Handles
+        if (elements.editImHandlesContainer) {
+            elements.editImHandlesContainer.innerHTML = '';
+            const imHandles = contact.imHandles || [];
+            imHandles.forEach(im => addImHandleInput(im.value, im.type));
+        }
+
+        // Render Related Contacts
+        if (elements.editRelatedContainer) {
+            elements.editRelatedContainer.innerHTML = '';
+            const related = contact.related || [];
+            related.forEach(rel => addRelatedInput(rel.value, rel.type));
+        }
+
+        // Check if any additional fields have data - if so, auto-expand
+        const hasAdditionalData = !!(
+            contact.prefix ||
+            contact.middleName ||
+            contact.suffix ||
+            contact.nickname ||
+            contact.department ||
+            contact.birthday ||
+            contact.anniversary ||
+            contact.gender ||
+            contact.timezone ||
+            contact.geo ||
+            (contact.urls && contact.urls.length > 0) ||
+            (contact.addresses && contact.addresses.length > 0) ||
+            (contact.socialProfiles && contact.socialProfiles.length > 0) ||
+            (contact.imHandles && contact.imHandles.length > 0) ||
+            (contact.related && contact.related.length > 0)
+        );
+
+        // Set additional fields visibility
+        if (elements.additionalFieldsSection && elements.toggleAdditionalFields) {
+            if (hasAdditionalData) {
+                elements.additionalFieldsSection.style.display = 'block';
+                elements.toggleAdditionalFields.parentElement.classList.add('expanded');
+                elements.toggleAdditionalFields.innerHTML = '<span class="toggle-icon">▼</span> Hide Additional Fields';
+            } else {
+                elements.additionalFieldsSection.style.display = 'none';
+                elements.toggleAdditionalFields.parentElement.classList.remove('expanded');
+                elements.toggleAdditionalFields.innerHTML = '<span class="toggle-icon">▶</span> Show Additional Fields';
+            }
+        }
+
         openModal(elements.editModal);
     }
 
@@ -789,6 +893,114 @@
             <button type="button" class="remove-input-btn" aria-label="Remove email">×</button>
         `;
         elements.editEmailsContainer.appendChild(row);
+    }
+
+    function addUrlInput(value = '', type = 'website') {
+        if (!elements.editUrlsContainer) return;
+        const row = document.createElement('div');
+        row.className = 'multi-input-row';
+        row.innerHTML = `
+            <input type="url" class="form-control url-value" value="${escapeHtml(value)}" placeholder="https://example.com">
+            <select class="url-type">
+                <option value="website" ${type === 'website' ? 'selected' : ''}>Website</option>
+                <option value="work" ${type === 'work' ? 'selected' : ''}>Work</option>
+                <option value="home" ${type === 'home' ? 'selected' : ''}>Home</option>
+                <option value="blog" ${type === 'blog' ? 'selected' : ''}>Blog</option>
+                <option value="other" ${type === 'other' ? 'selected' : ''}>Other</option>
+            </select>
+            <button type="button" class="remove-input-btn" aria-label="Remove URL">×</button>
+        `;
+        elements.editUrlsContainer.appendChild(row);
+    }
+
+    function addAddressInput(addr = {}) {
+        if (!elements.editAddressesContainer) return;
+        const type = addr.type || 'home';
+        const card = document.createElement('div');
+        card.className = 'address-card';
+        card.innerHTML = `
+            <div class="address-type-row">
+                <select class="addr-type">
+                    <option value="home" ${type === 'home' ? 'selected' : ''}>Home</option>
+                    <option value="work" ${type === 'work' ? 'selected' : ''}>Work</option>
+                    <option value="other" ${type === 'other' ? 'selected' : ''}>Other</option>
+                </select>
+                <button type="button" class="remove-input-btn" aria-label="Remove address">×</button>
+            </div>
+            <div class="address-fields">
+                <input type="text" class="form-control addr-street full-width" value="${escapeHtml(addr.street || '')}" placeholder="Street">
+                <input type="text" class="form-control addr-city" value="${escapeHtml(addr.city || '')}" placeholder="City">
+                <input type="text" class="form-control addr-region" value="${escapeHtml(addr.region || '')}" placeholder="State/Region">
+                <input type="text" class="form-control addr-postal" value="${escapeHtml(addr.postalCode || '')}" placeholder="Postal Code">
+                <input type="text" class="form-control addr-country" value="${escapeHtml(addr.country || '')}" placeholder="Country">
+            </div>
+        `;
+        elements.editAddressesContainer.appendChild(card);
+    }
+
+    function addSocialProfileInput(value = '', type = 'twitter') {
+        if (!elements.editSocialProfilesContainer) return;
+        const normalizedType = type?.toLowerCase() || 'twitter';
+        const row = document.createElement('div');
+        row.className = 'multi-input-row';
+        row.innerHTML = `
+            <select class="social-type">
+                <option value="twitter" ${normalizedType === 'twitter' ? 'selected' : ''}>Twitter/X</option>
+                <option value="facebook" ${normalizedType === 'facebook' ? 'selected' : ''}>Facebook</option>
+                <option value="instagram" ${normalizedType === 'instagram' ? 'selected' : ''}>Instagram</option>
+                <option value="linkedin" ${normalizedType === 'linkedin' ? 'selected' : ''}>LinkedIn</option>
+                <option value="tiktok" ${normalizedType === 'tiktok' ? 'selected' : ''}>TikTok</option>
+                <option value="youtube" ${normalizedType === 'youtube' ? 'selected' : ''}>YouTube</option>
+                <option value="other" ${normalizedType === 'other' ? 'selected' : ''}>Other</option>
+            </select>
+            <input type="text" class="form-control social-value" value="${escapeHtml(value)}" placeholder="@username or URL">
+            <button type="button" class="remove-input-btn" aria-label="Remove social">×</button>
+        `;
+        elements.editSocialProfilesContainer.appendChild(row);
+    }
+
+    function addImHandleInput(value = '', type = 'skype') {
+        if (!elements.editImHandlesContainer) return;
+        const normalizedType = type?.toLowerCase() || 'skype';
+        const row = document.createElement('div');
+        row.className = 'multi-input-row';
+        row.innerHTML = `
+            <select class="im-type">
+                <option value="skype" ${normalizedType === 'skype' ? 'selected' : ''}>Skype</option>
+                <option value="whatsapp" ${normalizedType === 'whatsapp' ? 'selected' : ''}>WhatsApp</option>
+                <option value="telegram" ${normalizedType === 'telegram' ? 'selected' : ''}>Telegram</option>
+                <option value="discord" ${normalizedType === 'discord' ? 'selected' : ''}>Discord</option>
+                <option value="jabber" ${normalizedType === 'jabber' ? 'selected' : ''}>Jabber/XMPP</option>
+                <option value="impp" ${normalizedType === 'impp' ? 'selected' : ''}>IMPP</option>
+                <option value="other" ${normalizedType === 'other' ? 'selected' : ''}>Other</option>
+            </select>
+            <input type="text" class="form-control im-value" value="${escapeHtml(value)}" placeholder="Username or ID">
+            <button type="button" class="remove-input-btn" aria-label="Remove IM">×</button>
+        `;
+        elements.editImHandlesContainer.appendChild(row);
+    }
+
+    function addRelatedInput(value = '', type = 'spouse') {
+        if (!elements.editRelatedContainer) return;
+        const normalizedType = type?.toLowerCase() || 'spouse';
+        const row = document.createElement('div');
+        row.className = 'multi-input-row';
+        row.innerHTML = `
+            <select class="related-type">
+                <option value="spouse" ${normalizedType === 'spouse' ? 'selected' : ''}>Spouse</option>
+                <option value="child" ${normalizedType === 'child' ? 'selected' : ''}>Child</option>
+                <option value="parent" ${normalizedType === 'parent' ? 'selected' : ''}>Parent</option>
+                <option value="sibling" ${normalizedType === 'sibling' ? 'selected' : ''}>Sibling</option>
+                <option value="friend" ${normalizedType === 'friend' ? 'selected' : ''}>Friend</option>
+                <option value="assistant" ${normalizedType === 'assistant' ? 'selected' : ''}>Assistant</option>
+                <option value="manager" ${normalizedType === 'manager' ? 'selected' : ''}>Manager</option>
+                <option value="contact" ${normalizedType === 'contact' ? 'selected' : ''}>Contact</option>
+                <option value="other" ${normalizedType === 'other' ? 'selected' : ''}>Other</option>
+            </select>
+            <input type="text" class="form-control related-value" value="${escapeHtml(value)}" placeholder="Name">
+            <button type="button" class="remove-input-btn" aria-label="Remove related">×</button>
+        `;
+        elements.editRelatedContainer.appendChild(row);
     }
 
     function renderConflictModal(group) {
@@ -1173,13 +1385,94 @@
             }
         });
 
+        // Gather URLs
+        const urls = [];
+        if (elements.editUrlsContainer) {
+            elements.editUrlsContainer.querySelectorAll('.multi-input-row').forEach(row => {
+                const value = row.querySelector('.url-value').value.trim();
+                const type = row.querySelector('.url-type').value;
+                if (value) {
+                    urls.push({ value, type });
+                }
+            });
+        }
+
+        // Gather Addresses
+        const addresses = [];
+        if (elements.editAddressesContainer) {
+            elements.editAddressesContainer.querySelectorAll('.address-card').forEach(card => {
+                const street = card.querySelector('.addr-street')?.value.trim() || '';
+                const city = card.querySelector('.addr-city')?.value.trim() || '';
+                const region = card.querySelector('.addr-region')?.value.trim() || '';
+                const postalCode = card.querySelector('.addr-postal')?.value.trim() || '';
+                const country = card.querySelector('.addr-country')?.value.trim() || '';
+                const type = card.querySelector('.addr-type')?.value || 'home';
+                // Only add if at least one field has data
+                if (street || city || region || postalCode || country) {
+                    addresses.push({ type, street, city, region, postalCode, country, poBox: '', extended: '' });
+                }
+            });
+        }
+
+        // Gather Social Profiles
+        const socialProfiles = [];
+        if (elements.editSocialProfilesContainer) {
+            elements.editSocialProfilesContainer.querySelectorAll('.multi-input-row').forEach(row => {
+                const value = row.querySelector('.social-value').value.trim();
+                const type = row.querySelector('.social-type').value;
+                if (value) {
+                    socialProfiles.push({ value, type });
+                }
+            });
+        }
+
+        // Gather IM Handles
+        const imHandles = [];
+        if (elements.editImHandlesContainer) {
+            elements.editImHandlesContainer.querySelectorAll('.multi-input-row').forEach(row => {
+                const value = row.querySelector('.im-value').value.trim();
+                const type = row.querySelector('.im-type').value;
+                if (value) {
+                    imHandles.push({ value, type });
+                }
+            });
+        }
+
+        // Gather Related Contacts
+        const related = [];
+        if (elements.editRelatedContainer) {
+            elements.editRelatedContainer.querySelectorAll('.multi-input-row').forEach(row => {
+                const value = row.querySelector('.related-value').value.trim();
+                const type = row.querySelector('.related-type').value;
+                if (value) {
+                    related.push({ value, type });
+                }
+            });
+        }
+
         const contactData = {
             name: elements.editName.value.trim(),
             organization: elements.editOrg.value.trim(),
             title: elements.editTitle.value.trim(),
             notes: elements.editNotes.value.trim(),
             phones,
-            emails
+            emails,
+            // Additional fields
+            prefix: elements.editPrefix?.value.trim() || '',
+            middleName: elements.editMiddleName?.value.trim() || '',
+            suffix: elements.editSuffix?.value.trim() || '',
+            nickname: elements.editNickname?.value.trim() || '',
+            department: elements.editDepartment?.value.trim() || '',
+            birthday: elements.editBirthday?.value || '',
+            anniversary: elements.editAnniversary?.value || '',
+            gender: elements.editGender?.value || '',
+            timezone: elements.editTimezone?.value.trim() || '',
+            geo: elements.editGeo?.value.trim() || '',
+            urls,
+            addresses,
+            socialProfiles,
+            imHandles,
+            related
         };
 
         if (!contactData.name && phones.length === 0) {
@@ -1228,6 +1521,30 @@
         elements.editNotes.value = '';
         elements.editPhonesContainer.innerHTML = '';
         elements.editEmailsContainer.innerHTML = '';
+
+        // Clear additional fields
+        if (elements.editPrefix) elements.editPrefix.value = '';
+        if (elements.editMiddleName) elements.editMiddleName.value = '';
+        if (elements.editSuffix) elements.editSuffix.value = '';
+        if (elements.editNickname) elements.editNickname.value = '';
+        if (elements.editDepartment) elements.editDepartment.value = '';
+        if (elements.editBirthday) elements.editBirthday.value = '';
+        if (elements.editAnniversary) elements.editAnniversary.value = '';
+        if (elements.editGender) elements.editGender.value = '';
+        if (elements.editTimezone) elements.editTimezone.value = '';
+        if (elements.editGeo) elements.editGeo.value = '';
+        if (elements.editUrlsContainer) elements.editUrlsContainer.innerHTML = '';
+        if (elements.editAddressesContainer) elements.editAddressesContainer.innerHTML = '';
+        if (elements.editSocialProfilesContainer) elements.editSocialProfilesContainer.innerHTML = '';
+        if (elements.editImHandlesContainer) elements.editImHandlesContainer.innerHTML = '';
+        if (elements.editRelatedContainer) elements.editRelatedContainer.innerHTML = '';
+
+        // Hide additional fields section by default for new contacts
+        if (elements.additionalFieldsSection && elements.toggleAdditionalFields) {
+            elements.additionalFieldsSection.style.display = 'none';
+            elements.toggleAdditionalFields.parentElement.classList.remove('expanded');
+            elements.toggleAdditionalFields.innerHTML = '<span class="toggle-icon">▶</span> Show Additional Fields';
+        }
 
         // Add one empty phone and email input
         addPhoneInput();
@@ -1747,18 +2064,54 @@
         elements.addEmailBtn.addEventListener('click', () => addEmailInput());
         elements.saveContactBtn.addEventListener('click', handleSaveContact);
 
+        // Additional fields toggle
+        if (elements.toggleAdditionalFields) {
+            elements.toggleAdditionalFields.addEventListener('click', () => {
+                const section = elements.additionalFieldsSection;
+                const toggle = elements.toggleAdditionalFields;
+                const isHidden = section.style.display === 'none';
+
+                section.style.display = isHidden ? 'block' : 'none';
+                toggle.parentElement.classList.toggle('expanded', isHidden);
+                toggle.innerHTML = isHidden
+                    ? '<span class="toggle-icon">▼</span> Hide Additional Fields'
+                    : '<span class="toggle-icon">▶</span> Show Additional Fields';
+            });
+        }
+
+        // Additional fields add buttons
+        if (elements.addUrlBtn) {
+            elements.addUrlBtn.addEventListener('click', () => addUrlInput());
+        }
+        if (elements.addAddressBtn) {
+            elements.addAddressBtn.addEventListener('click', () => addAddressInput());
+        }
+        if (elements.addSocialProfileBtn) {
+            elements.addSocialProfileBtn.addEventListener('click', () => addSocialProfileInput());
+        }
+        if (elements.addImHandleBtn) {
+            elements.addImHandleBtn.addEventListener('click', () => addImHandleInput());
+        }
+        if (elements.addRelatedBtn) {
+            elements.addRelatedBtn.addEventListener('click', () => addRelatedInput());
+        }
+
         // Add Contact button
         if (elements.addContactBtn) {
             elements.addContactBtn.addEventListener('click', openAddContactModal);
         }
 
-        // Remove input buttons
+        // Remove input buttons (works for all multi-input types)
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-input-btn')) {
-                const container = e.target.closest('.multi-input-container');
-                if (container.querySelectorAll('.multi-input-row').length > 1) {
-                    e.target.closest('.multi-input-row').remove();
+                // Check if it's inside an address card
+                const addrCard = e.target.closest('.address-card');
+                if (addrCard) {
+                    addrCard.remove();
+                    return;
                 }
+                // Otherwise remove the multi-input-row
+                e.target.closest('.multi-input-row')?.remove();
             }
         });
 

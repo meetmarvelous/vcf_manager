@@ -989,6 +989,17 @@ body {
   gap: var(--spacing-md);
 }
 
+.form-row-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+@media (max-width: 600px) {
+  .form-row,
+  .form-row-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Required field indicator */
 .required-asterisk {
   color: var(--color-danger);
@@ -1004,6 +1015,95 @@ body {
   background: var(--color-bg-tertiary);
   border-radius: var(--radius-md);
   border-left: 3px solid var(--color-warning);
+}
+
+/* Additional Fields Toggle */
+.additional-fields-toggle {
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+  border-top: 1px dashed var(--color-border);
+}
+
+.additional-fields-toggle .btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+}
+
+.additional-fields-toggle .toggle-icon {
+  transition: transform var(--transition-fast);
+  display: inline-block;
+}
+
+.additional-fields-toggle.expanded .toggle-icon {
+  transform: rotate(90deg);
+}
+
+/* Additional Fields Section */
+.additional-fields-section {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.additional-fields-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+/* Address Card Styling */
+.address-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.address-card .address-type-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.address-card .address-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+.address-card .address-fields .full-width {
+  grid-column: 1 / -1;
+}
+
+.address-card .form-control {
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 .vcf-textarea {

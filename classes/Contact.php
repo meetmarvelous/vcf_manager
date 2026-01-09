@@ -13,12 +13,29 @@ class Contact
     public string $name;
     public string $firstName;
     public string $lastName;
+    public string $middleName;
+    public string $prefix;
+    public string $suffix;
+    public string $nickname;
     public array $phones;
     public array $emails;
+    public array $addresses;
     public string $organization;
+    public string $department;
     public string $title;
     public string $notes;
     public array $tags;
+    public array $urls;
+    public string $birthday;
+    public string $anniversary;
+    public string $photo;
+    public string $photoType;
+    public array $socialProfiles;
+    public array $imHandles;
+    public string $geo;
+    public string $timezone;
+    public string $gender;
+    public array $related;
     public string $sourceFile;
     public string $raw;
 
@@ -32,12 +49,29 @@ class Contact
         $contact->name = $data['name'] ?? '';
         $contact->firstName = $data['firstName'] ?? '';
         $contact->lastName = $data['lastName'] ?? '';
+        $contact->middleName = $data['middleName'] ?? '';
+        $contact->prefix = $data['prefix'] ?? '';
+        $contact->suffix = $data['suffix'] ?? '';
+        $contact->nickname = $data['nickname'] ?? '';
         $contact->phones = $data['phones'] ?? [];
         $contact->emails = $data['emails'] ?? [];
+        $contact->addresses = $data['addresses'] ?? [];
         $contact->organization = $data['organization'] ?? '';
+        $contact->department = $data['department'] ?? '';
         $contact->title = $data['title'] ?? '';
         $contact->notes = $data['notes'] ?? '';
         $contact->tags = $data['tags'] ?? [];
+        $contact->urls = $data['urls'] ?? [];
+        $contact->birthday = $data['birthday'] ?? '';
+        $contact->anniversary = $data['anniversary'] ?? '';
+        $contact->photo = $data['photo'] ?? '';
+        $contact->photoType = $data['photoType'] ?? '';
+        $contact->socialProfiles = $data['socialProfiles'] ?? [];
+        $contact->imHandles = $data['imHandles'] ?? [];
+        $contact->geo = $data['geo'] ?? '';
+        $contact->timezone = $data['timezone'] ?? '';
+        $contact->gender = $data['gender'] ?? '';
+        $contact->related = $data['related'] ?? [];
         $contact->sourceFile = $data['sourceFile'] ?? '';
         $contact->raw = $data['raw'] ?? '';
         
@@ -54,12 +88,29 @@ class Contact
             'name' => $this->name,
             'firstName' => $this->firstName,
             'lastName' => $this->lastName,
+            'middleName' => $this->middleName,
+            'prefix' => $this->prefix,
+            'suffix' => $this->suffix,
+            'nickname' => $this->nickname,
             'phones' => $this->phones,
             'emails' => $this->emails,
+            'addresses' => $this->addresses,
             'organization' => $this->organization,
+            'department' => $this->department,
             'title' => $this->title,
             'notes' => $this->notes,
             'tags' => $this->tags,
+            'urls' => $this->urls,
+            'birthday' => $this->birthday,
+            'anniversary' => $this->anniversary,
+            'photo' => $this->photo,
+            'photoType' => $this->photoType,
+            'socialProfiles' => $this->socialProfiles,
+            'imHandles' => $this->imHandles,
+            'geo' => $this->geo,
+            'timezone' => $this->timezone,
+            'gender' => $this->gender,
+            'related' => $this->related,
             'sourceFile' => $this->sourceFile,
         ];
     }
@@ -266,9 +317,17 @@ class Contact
         // Full name
         $lines[] = 'FN:' . $this->escapeVCF($this->name);
 
-        // Structured name
+        // Structured name: Last;First;Middle;Prefix;Suffix
         $lines[] = 'N:' . $this->escapeVCF($this->lastName) . ';' . 
-                   $this->escapeVCF($this->firstName) . ';;;';
+                   $this->escapeVCF($this->firstName) . ';' .
+                   $this->escapeVCF($this->middleName) . ';' .
+                   $this->escapeVCF($this->prefix) . ';' .
+                   $this->escapeVCF($this->suffix);
+
+        // Nickname
+        if (!empty($this->nickname)) {
+            $lines[] = 'NICKNAME:' . $this->escapeVCF($this->nickname);
+        }
 
         // Phone numbers
         foreach ($this->phones as $phone) {
@@ -282,14 +341,88 @@ class Contact
             $lines[] = "EMAIL;TYPE={$type}:" . $email['value'];
         }
 
-        // Organization
+        // Addresses
+        foreach ($this->addresses as $addr) {
+            $type = strtoupper($addr['type'] ?? 'HOME');
+            $adrValue = implode(';', [
+                $addr['poBox'] ?? '',
+                $addr['extended'] ?? '',
+                $addr['street'] ?? '',
+                $addr['city'] ?? '',
+                $addr['region'] ?? '',
+                $addr['postalCode'] ?? '',
+                $addr['country'] ?? ''
+            ]);
+            $lines[] = "ADR;TYPE={$type}:" . $adrValue;
+        }
+
+        // Organization (with optional department)
         if (!empty($this->organization)) {
-            $lines[] = 'ORG:' . $this->escapeVCF($this->organization);
+            $org = $this->escapeVCF($this->organization);
+            if (!empty($this->department)) {
+                $org .= ';' . $this->escapeVCF($this->department);
+            }
+            $lines[] = 'ORG:' . $org;
         }
 
         // Title
         if (!empty($this->title)) {
             $lines[] = 'TITLE:' . $this->escapeVCF($this->title);
+        }
+
+        // URLs
+        foreach ($this->urls as $url) {
+            $type = strtoupper($url['type'] ?? 'WORK');
+            $lines[] = "URL;TYPE={$type}:" . $url['value'];
+        }
+
+        // Birthday
+        if (!empty($this->birthday)) {
+            $lines[] = 'BDAY:' . $this->birthday;
+        }
+
+        // Anniversary
+        if (!empty($this->anniversary)) {
+            $lines[] = 'ANNIVERSARY:' . $this->anniversary;
+        }
+
+        // Photo (if present and is base64)
+        if (!empty($this->photo) && strlen($this->photo) < 100000) {
+            $photoType = strtoupper($this->photoType ?: 'JPEG');
+            $lines[] = "PHOTO;ENCODING=b;TYPE={$photoType}:" . $this->photo;
+        }
+
+        // Gender
+        if (!empty($this->gender)) {
+            $lines[] = 'GENDER:' . $this->gender;
+        }
+
+        // Geo coordinates
+        if (!empty($this->geo)) {
+            $lines[] = 'GEO:' . $this->geo;
+        }
+
+        // Timezone
+        if (!empty($this->timezone)) {
+            $lines[] = 'TZ:' . $this->timezone;
+        }
+
+        // Social Profiles
+        foreach ($this->socialProfiles as $social) {
+            $type = strtoupper($social['type'] ?? 'OTHER');
+            $lines[] = "X-SOCIALPROFILE;TYPE={$type}:" . $social['value'];
+        }
+
+        // IM Handles
+        foreach ($this->imHandles as $im) {
+            $type = strtoupper($im['type'] ?? 'OTHER');
+            $lines[] = "IMPP;TYPE={$type}:" . $im['value'];
+        }
+
+        // Related contacts
+        foreach ($this->related as $rel) {
+            $type = strtoupper($rel['type'] ?? 'CONTACT');
+            $lines[] = "RELATED;TYPE={$type}:" . $this->escapeVCF($rel['value']);
         }
 
         // Notes

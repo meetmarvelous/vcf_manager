@@ -323,8 +323,113 @@
                     </div>
                     <div class="form-group">
                         <label for="editNotes">Notes</label>
-                        <textarea id="editNotes" class="form-control" rows="3"
+                        <textarea id="editNotes" class="form-control" rows="2"
                             placeholder="Additional notes..."></textarea>
+                    </div>
+
+                    <!-- Toggle for Additional Fields -->
+                    <div class="additional-fields-toggle">
+                        <button type="button" class="btn btn-sm btn-link" id="toggleAdditionalFields">
+                            <span class="toggle-icon">▶</span> Show Additional Fields
+                        </button>
+                    </div>
+
+                    <!-- Additional Fields Section (Hidden by default) -->
+                    <div class="additional-fields-section" id="additionalFieldsSection" style="display: none;">
+                        <div class="additional-fields-header">
+                            <span>📋 Additional Contact Information</span>
+                        </div>
+
+                        <div class="form-row form-row-3">
+                            <div class="form-group">
+                                <label for="editPrefix">Prefix</label>
+                                <input type="text" id="editPrefix" class="form-control" placeholder="Dr., Mr., Mrs.">
+                            </div>
+                            <div class="form-group">
+                                <label for="editMiddleName">Middle Name</label>
+                                <input type="text" id="editMiddleName" class="form-control" placeholder="Middle name">
+                            </div>
+                            <div class="form-group">
+                                <label for="editSuffix">Suffix</label>
+                                <input type="text" id="editSuffix" class="form-control" placeholder="Jr., Sr., PhD">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editNickname">Nickname</label>
+                                <input type="text" id="editNickname" class="form-control" placeholder="Nickname">
+                            </div>
+                            <div class="form-group">
+                                <label for="editDepartment">Department</label>
+                                <input type="text" id="editDepartment" class="form-control" placeholder="Department">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editBirthday">Birthday</label>
+                                <input type="date" id="editBirthday" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="editAnniversary">Anniversary</label>
+                                <input type="date" id="editAnniversary" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editUrls">Websites/URLs</label>
+                            <div id="editUrlsContainer" class="multi-input-container"></div>
+                            <button type="button" class="btn btn-sm btn-link" id="addUrlBtn">+ Add URL</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editAddresses">Addresses</label>
+                            <div id="editAddressesContainer" class="multi-input-container"></div>
+                            <button type="button" class="btn btn-sm btn-link" id="addAddressBtn">+ Add Address</button>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editGender">Gender</label>
+                                <select id="editGender" class="form-control">
+                                    <option value="">Not specified</option>
+                                    <option value="M">Male</option>
+                                    <option value="F">Female</option>
+                                    <option value="O">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editTimezone">Timezone</label>
+                                <input type="text" id="editTimezone" class="form-control" placeholder="e.g., +01:00">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editSocialProfiles">Social Profiles</label>
+                            <div id="editSocialProfilesContainer" class="multi-input-container"></div>
+                            <button type="button" class="btn btn-sm btn-link" id="addSocialProfileBtn">+ Add Social
+                                Profile</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editImHandles">Instant Messaging</label>
+                            <div id="editImHandlesContainer" class="multi-input-container"></div>
+                            <button type="button" class="btn btn-sm btn-link" id="addImHandleBtn">+ Add IM
+                                Handle</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editRelated">Related Contacts</label>
+                            <div id="editRelatedContainer" class="multi-input-container"></div>
+                            <button type="button" class="btn btn-sm btn-link" id="addRelatedBtn">+ Add Related
+                                Contact</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editGeo">Location (Geo Coordinates)</label>
+                            <input type="text" id="editGeo" class="form-control" placeholder="e.g., 37.7749,-122.4194">
+                        </div>
                     </div>
                 </form>
             </div>

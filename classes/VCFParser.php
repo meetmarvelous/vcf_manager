@@ -56,12 +56,29 @@ class VCFParser
             'name' => '',
             'firstName' => '',
             'lastName' => '',
+            'middleName' => '',
+            'prefix' => '',
+            'suffix' => '',
+            'nickname' => '',
             'phones' => [],
             'emails' => [],
+            'addresses' => [],
             'organization' => '',
+            'department' => '',
             'title' => '',
             'notes' => '',
             'tags' => [],
+            'urls' => [],
+            'birthday' => '',
+            'anniversary' => '',
+            'photo' => '',
+            'photoType' => '',
+            'socialProfiles' => [],
+            'imHandles' => [],
+            'geo' => '',
+            'timezone' => '',
+            'gender' => '',
+            'related' => [],
             'raw' => $vcard,
         ];
 
@@ -120,9 +137,16 @@ class VCFParser
                 $parts = explode(';', $value);
                 $contact['lastName'] = $parts[0] ?? '';
                 $contact['firstName'] = $parts[1] ?? '';
+                $contact['middleName'] = $parts[2] ?? '';
+                $contact['prefix'] = $parts[3] ?? '';
+                $contact['suffix'] = $parts[4] ?? '';
                 if (empty($contact['name']) && (!empty($contact['firstName']) || !empty($contact['lastName']))) {
                     $contact['name'] = trim($contact['firstName'] . ' ' . $contact['lastName']);
                 }
+                break;
+
+            case 'NICKNAME':
+                $contact['nickname'] = $value;
                 break;
 
             case 'TEL':
@@ -142,8 +166,27 @@ class VCFParser
                 ];
                 break;
 
+            case 'ADR':
+                // ADR: PO Box;Extended;Street;City;Region;PostalCode;Country
+                $type = $this->extractType($params);
+                $adrParts = explode(';', $value);
+                $contact['addresses'][] = [
+                    'type' => $type,
+                    'poBox' => $adrParts[0] ?? '',
+                    'extended' => $adrParts[1] ?? '',
+                    'street' => $adrParts[2] ?? '',
+                    'city' => $adrParts[3] ?? '',
+                    'region' => $adrParts[4] ?? '',
+                    'postalCode' => $adrParts[5] ?? '',
+                    'country' => $adrParts[6] ?? '',
+                ];
+                break;
+
             case 'ORG':
-                $contact['organization'] = $value;
+                // ORG can have multiple parts separated by semicolons
+                $orgParts = explode(';', $value);
+                $contact['organization'] = $orgParts[0] ?? '';
+                $contact['department'] = $orgParts[1] ?? '';
                 break;
 
             case 'TITLE':
@@ -156,6 +199,86 @@ class VCFParser
 
             case 'CATEGORIES':
                 $contact['tags'] = array_map('trim', explode(',', $value));
+                break;
+
+            case 'URL':
+                $type = $this->extractType($params);
+                $contact['urls'][] = [
+                    'value' => $value,
+                    'type' => $type ?: 'website',
+                ];
+                break;
+
+            case 'BDAY':
+                $contact['birthday'] = $value;
+                break;
+
+            case 'ANNIVERSARY':
+            case 'X-ANNIVERSARY':
+                $contact['anniversary'] = $value;
+                break;
+
+            case 'PHOTO':
+                // Store photo data and type
+                $contact['photo'] = $value;
+                $contact['photoType'] = $params['TYPE'] ?? $params['MEDIATYPE'] ?? 'JPEG';
+                break;
+
+            case 'GENDER':
+                $contact['gender'] = $value;
+                break;
+
+            case 'GEO':
+                $contact['geo'] = $value;
+                break;
+
+            case 'TZ':
+                $contact['timezone'] = $value;
+                break;
+
+            case 'IMPP':
+            case 'X-SKYPE':
+            case 'X-AIM':
+            case 'X-YAHOO':
+            case 'X-MSN':
+            case 'X-ICQ':
+            case 'X-JABBER':
+            case 'X-QQ':
+                $imType = str_replace('X-', '', $property);
+                $contact['imHandles'][] = [
+                    'type' => strtolower($imType),
+                    'value' => $value,
+                ];
+                break;
+
+            case 'X-SOCIALPROFILE':
+            case 'X-TWITTER':
+            case 'X-FACEBOOK':
+            case 'X-LINKEDIN':
+            case 'X-INSTAGRAM':
+            case 'X-TIKTOK':
+            case 'X-YOUTUBE':
+                $socialType = $params['TYPE'] ?? str_replace('X-', '', $property);
+                $contact['socialProfiles'][] = [
+                    'type' => strtolower($socialType),
+                    'value' => $value,
+                ];
+                break;
+
+            case 'RELATED':
+                $relType = $params['TYPE'] ?? 'contact';
+                $contact['related'][] = [
+                    'type' => strtolower($relType),
+                    'value' => $value,
+                ];
+                break;
+
+            case 'X-PHONETIC-FIRST-NAME':
+                $contact['phoneticFirstName'] = $value;
+                break;
+
+            case 'X-PHONETIC-LAST-NAME':
+                $contact['phoneticLastName'] = $value;
                 break;
         }
     }
