@@ -424,10 +424,10 @@
             columnDefs: [
                 { orderable: false, targets: [0, 6] }, // Disable sort on checkbox and actions columns
                 { searchable: false, targets: [0, 6] }, // Don't search checkbox/actions
-                { responsivePriority: 1, targets: 1 }, // Name highest priority
-                { responsivePriority: 2, targets: 2 }, // Phone second priority
-                { responsivePriority: 3, targets: 3 }, // Email third priority
-                { responsivePriority: 10001, targets: [4, 5] } // Org and Source hidden first
+                { responsivePriority: 1, targets: [0, 1, 6] }, // Checkbox, Name, Actions - Highest priority (always visible)
+                { responsivePriority: 2, targets: 2 }, // Phone - High priority
+                { responsivePriority: 100, targets: 3 }, // Email - Medium priority (hidden on smaller screens)
+                { responsivePriority: 1000, targets: [4, 5] } // Org and Source - Low priority (hidden first)
             ],
 
             // Responsive extension
@@ -1749,12 +1749,21 @@
     // Event Handlers
     // =============================================
     function setupEventListeners() {
-        // Mobile menu
-        elements.mobileMenuBtn.addEventListener('click', () => {
-            elements.sidebar.classList.toggle('open');
-        });
+        // Sidebar Toggles
+        if (elements.mobileMenuBtn) {
+            elements.mobileMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent immediate closing
+                elements.sidebar.classList.toggle('open');
+            });
+        }
 
-        // Close sidebar on outside click (mobile)
+        if (elements.sidebarToggle) {
+            elements.sidebarToggle.addEventListener('click', () => {
+                elements.sidebar.classList.remove('open');
+            });
+        }
+
+        // Close sidebar when clicking outside on mobile
         document.addEventListener('click', (e) => {
             if (window.innerWidth <= 768 &&
                 elements.sidebar.classList.contains('open') &&
